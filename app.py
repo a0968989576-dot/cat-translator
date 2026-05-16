@@ -35,6 +35,9 @@ def play_voice(text):
 # --- 核心功能：相機與照片輸入 ---
 st.subheader("📷 取得貓咪影像")
 
+# 加入最新版手機圖示的貼心防呆提示
+st.info("💡 小提醒：如果按了拍照沒反應，代表您之前可能按到了『拒絕』。請點擊手機網址列旁邊的「🔒鎖頭」、「Aa」或「🎛️ 調整拉桿」圖示，手動將相機權限改為「允許」再重新整理歐！")
+
 # Streamlit 超強功能：同時提供相機與檔案上傳
 picture = st.camera_input("📸 點擊開啟相機即時拍照")
 uploaded_file = st.file_uploader(
