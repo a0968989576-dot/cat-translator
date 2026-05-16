@@ -11,7 +11,7 @@ GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
 # 🌟 初始化新版 AI 客戶端
 client = genai.Client(api_key=GOOGLE_API_KEY)
-MODEL_ID = 'gemini-1.5-flash-8b'
+MODEL_ID = 'gemini-2.0-flash'
 
 # --- 網頁基本設定 ---
 st.set_page_config(page_title="AI 貓咪讀心術", page_icon="📷", layout="centered")
