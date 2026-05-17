@@ -49,9 +49,9 @@ uploaded_file = st.file_uploader(
 media_to_process = picture or uploaded_file
 
 if media_to_process:
-    # 判斷這是不是影片檔
+    # 修正 Bug：判斷「目前真正要處理的檔案」是不是影片檔
     is_video = False
-    if uploaded_file is not None and uploaded_file.name.split('.')[-1].lower() in ['mp4', 'mov', 'avi']:
+    if media_to_process.name.split('.')[-1].lower() in ['mp4', 'mov', 'avi']:
         is_video = True
 
     # 顯示要分析的畫面
