@@ -11,7 +11,6 @@ GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
 
 # 🌟 初始化新版 AI 客戶端
 client = genai.Client(api_key=GOOGLE_API_KEY)
-MODEL_ID = 'gemini-2.5-flash'
 
 # --- 網頁基本設定 ---
 st.set_page_config(page_title="AI 貓咪讀心術", page_icon="📷", layout="centered")
@@ -19,8 +18,6 @@ st.title("🐾 AI 貓咪影像讀心術 (Web 版) 🐾")
 st.write("讓 AI 看看主子在想什麼？你可以直接拍照，或是上傳手機裡的照片！")
 
 # --- 語音播放功能 (直接在網頁產生播放器) ---
-
-
 def play_voice(text):
     try:
         tts = gTTS(text=text, lang='zh-TW')
@@ -30,7 +27,6 @@ def play_voice(text):
         st.audio(audio_buffer, format='audio/mp3', autoplay=True)
     except Exception as e:
         st.error(f"語音發生錯誤：{e}")
-
 
 # --- 核心功能：相機與照片輸入 ---
 st.subheader("📷 取得貓咪影像")
@@ -65,12 +61,13 @@ if image_to_process:
                 3. 字數控制在 30 字以內。
                 """
 
-                # 呼叫 AI 進行視覺分析
+                # 🚀 直接使用目前最穩定、免費額度最多的 2.5 版主力大腦
                 response = client.models.generate_content(
-                    model=MODEL_ID,
+                    model='gemini-2.5-flash',
                     contents=[img, prompt]
                 )
 
+                # 取得翻譯結果
                 result_text = response.text.strip()
 
                 # 顯示結果並發聲
@@ -78,4 +75,9 @@ if image_to_process:
                 play_voice(result_text)
 
             except Exception as e:
-                st.error(f"(視覺分析失敗... {e})")
+                # 🛠️ 聰明的錯誤攔截機制：檢查是不是點太快觸發了 429 限制
+                error_msg = str(e)
+                if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
+                    st.warning("⚠️ 翻譯機稍稍過熱啦！因為目前使用人數較多，請等 30 秒後再按一次『開始讀心』喔！")
+                else:
+                    st.error(f"(視覺分析失敗，請稍後再試... 錯誤代碼: {e})")
