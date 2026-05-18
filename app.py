@@ -17,7 +17,7 @@ client = genai.Client(api_key=GOOGLE_API_KEY)
 
 # --- 網頁基本設定 ---
 st.set_page_config(page_title="AI 貓咪讀心術", page_icon="🐾", layout="centered")
-st.title("🐾 AI 貓咪影像讀心術 (Web 升級版) 🐾")
+st.title("🐾 AI 貓咪影像讀心術 🐾")
 st.write("讓 AI 看看主子在想什麼？你可以拍照，或是上傳手機裡的照片與**短影片**！")
 
 # --- 語音播放功能 ---
