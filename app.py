@@ -37,19 +37,19 @@ st.subheader("📷 取得貓咪影像")
 st.info("💡 小提醒：如果按了拍照沒反應，代表您之前可能按到了『拒絕』。請點擊手機網址列旁邊的「🔒鎖頭」、「Aa」或「🎛️ 調整拉桿」圖示，手動將相機權限改為「允許」再重新整理歐！")
 
 # 📸 相機拍照
-picture = st.camera_input("📸 點擊開啟相機即時拍照")
+picture = st.camera_input("📸 點擊開啟相機即時拍照 (若要上傳檔案，請先按照片右上角的 X 關閉)")
 
-# 📂 檔案上傳 (升級支援影片格式！)
+# 📂 檔案上傳
 uploaded_file = st.file_uploader(
     "📂 或者上傳一張照片 / 短影片 (建議 5~10 秒內)", 
     type=["jpg", "jpeg", "png", "mp4", "mov", "avi"]
 )
 
-# 判斷使用者是用相機還是上傳 (相機優先)
-media_to_process = picture or uploaded_file
+# 修正 UX 盲點：讓「上傳的檔案」優先級高於「相機拍照」，才不會卡位
+media_to_process = uploaded_file or picture 
 
 if media_to_process:
-    # 修正 Bug：判斷「目前真正要處理的檔案」是不是影片檔
+    # 判斷「目前真正要處理的檔案」是不是影片檔
     is_video = False
     if media_to_process.name.split('.')[-1].lower() in ['mp4', 'mov', 'avi']:
         is_video = True
@@ -74,31 +74,40 @@ if media_to_process:
                 """
 
                 if is_video:
-                    # 🎬 【處理影片邏輯】
-                    # 1. 將影片先存成暫存檔 (Google AI 需要讀取實體檔案)
-                    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
-                        tmp_file.write(media_to_process.read())
-                        tmp_path = tmp_file.name
-                    
-                    # 2. 上傳影片給 Google
-                    uploaded_vid = client.files.upload(file=tmp_path)
+                    tmp_path = None
+                    uploaded_vid = None
+                    try:
+                        # 1. 將影片先存成暫存檔
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp_file:
+                            tmp_file.write(media_to_process.read())
+                            tmp_path = tmp_file.name
+                        
+                        # 2. 上傳影片給 Google
+                        uploaded_vid = client.files.upload(file=tmp_path)
 
-                    # 3. 讓程式等一下，確保 Google 看完影片了
-                    while uploaded_vid.state.name == "PROCESSING":
-                        time.sleep(2)
-                        uploaded_vid = client.files.get(name=uploaded_vid.name)
-                    
-                    # 4. 開始發送詢問
-                    response = client.models.generate_content(
-                        model='gemini-2.5-flash',
-                        contents=[uploaded_vid, prompt]
-                    )
+                        # 3. 等待 Google 處理
+                        while uploaded_vid.state.name == "PROCESSING":
+                            time.sleep(2)
+                            uploaded_vid = client.files.get(name=uploaded_vid.name)
+                        
+                        # 加入防呆：如果 Google 處理失敗，主動報錯
+                        if uploaded_vid.state.name == "FAILED":
+                            raise Exception("Google 大腦無法解析這段影片格式！")
 
-                    # 5. 翻完後把暫存檔刪掉，節省空間
-                    os.remove(tmp_path)
+                        # 4. 開始發送詢問
+                        response = client.models.generate_content(
+                            model='gemini-2.5-flash',
+                            contents=[uploaded_vid, prompt]
+                        )
+                    finally:
+                        # 5. 🧹 【終極清道夫機制】無論成功或報錯，都一定會執行這裡！
+                        if tmp_path and os.path.exists(tmp_path):
+                            os.remove(tmp_path) # 刪除 Streamlit 伺服器上的垃圾
+                        if uploaded_vid:
+                            client.files.delete(name=uploaded_vid.name) # 刪除 Google 雲端上的垃圾
 
                 else:
-                    # 🖼️ 【處理照片邏輯】(原本的寫法)
+                    # 🖼️ 處理照片邏輯
                     img = Image.open(media_to_process)
                     response = client.models.generate_content(
                         model='gemini-2.5-flash',
@@ -113,7 +122,7 @@ if media_to_process:
                 play_voice(result_text)
 
             except Exception as e:
-                # 錯誤攔截機制：檢查是不是點太快觸發了 429 限制
+                # 錯誤攔截機制
                 error_msg = str(e)
                 if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
                     st.warning("⚠️ 翻譯機稍稍過熱啦！因為目前使用人數較多，請等 30 秒後再試喔！")
