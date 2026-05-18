@@ -37,7 +37,7 @@ st.subheader("📷 取得貓咪影像")
 st.info("💡 小提醒：如果按了拍照沒反應，代表您之前可能按到了『拒絕』。請點擊手機網址列旁邊的「🔒鎖頭」、「Aa」或「🎛️ 調整拉桿」圖示，手動將相機權限改為「允許」再重新整理歐！")
 
 # 📸 相機拍照
-picture = st.camera_input("📸 點擊開啟相機即時拍照 (若要上傳檔案，請先按照片右上角的 X 關閉)")
+picture = st.camera_input("📸 點擊開啟相機即時拍照 (若要上傳檔案，請先按照片下方的 X Clear photo 關閉)")
 
 # 📂 檔案上傳
 uploaded_file = st.file_uploader(
